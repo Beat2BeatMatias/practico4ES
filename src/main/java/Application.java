@@ -10,7 +10,7 @@ public class Application {
 
 
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
 
         port(8080);
 
@@ -22,9 +22,15 @@ public class Application {
 
         get("/items", (request, response) -> {
             response.type("application/json");
-            ArrayList arrayListItems=ItemService.getAllItems();
-            JsonElement gson = new Gson().toJsonTree(arrayListItems);
-            return new Gson().toJson(new StandarResponse(StatusResponse.SUCCESS, gson));
+            try {
+                ArrayList arrayListItems = ItemService.getAllItems();
+                JsonElement gson = new Gson().toJsonTree(arrayListItems);
+                return new Gson().toJson(new StandarResponse(StatusResponse.SUCCESS, gson));
+            }catch (ItemException e){
+                return new Gson().toJson(new StandarResponse(StatusResponse.ERROR, e.getMessage()));
+            }catch (Exception e){
+                return new Gson().toJson(new StandarResponse(StatusResponse.ERROR, e.getMessage()));
+            }
         });
 
 

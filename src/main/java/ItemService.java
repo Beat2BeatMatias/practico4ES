@@ -81,7 +81,7 @@ public class ItemService {
         return item;
     }
 
-    static Item getItemById(String id){
+    static Item getItemById(String id) {
         GetRequest getItemRequest = new GetRequest(INDEX, TYPE, id);
         GetResponse getResponse = null;
         try {
@@ -92,33 +92,34 @@ public class ItemService {
         return getResponse != null ?
                 objectMapper.convertValue(getResponse.getSourceAsMap(), Item.class) : null;
     }
-    static ArrayList<Map> getAllItems(){
+    static ArrayList<Map> getAllItems() throws ItemException, IOException {
         SearchRequest searchRequest = new SearchRequest(INDEX);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         searchSourceBuilder.query(QueryBuilders.matchAllQuery());
         searchRequest.source(searchSourceBuilder);
         SearchResponse searchResponse=null;
-        try {
-            searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
+        searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+
         ArrayList<Map> listaHits=new ArrayList<Map>();
-        searchResponse.getHits().forEach(hit -> listaHits.add(hit.getSourceAsMap()));
-       return listaHits;
+        if (searchResponse != null) {
+            searchResponse.getHits().forEach(hit -> listaHits.add(hit.getSourceAsMap()));
+            return listaHits;
+        }else
+            throw new ItemException("La busequeda es nula...");
     }
 
-    static Item updateItemById(Item item){
+    static Item updateItemById(Item item) throws ItemException {
         UpdateRequest updateRequest = new UpdateRequest(INDEX, TYPE, item.getId())
                 .fetchSource(true);    // Fetch Object after its update
         try {
-            String personJson = objectMapper.writeValueAsString(item);
-            updateRequest.doc(personJson, XContentType.JSON);
+            String itemJson = objectMapper.writeValueAsString(item);
+            updateRequest.doc(itemJson, XContentType.JSON);
             UpdateResponse updateResponse = restHighLevelClient.update(updateRequest);
             return objectMapper.convertValue(updateResponse.getGetResult().sourceAsMap(), Item.class);
         }catch (JsonProcessingException e){
             e.getMessage();
-        } catch (IOException e){
+        }catch (IOException e){
             e.getLocalizedMessage();
         }
         System.out.println("Unable to update person");
